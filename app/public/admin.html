@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin · Birthday Site</title>
+<style>
+body{font:14px/1.5 system-ui,sans-serif;background:#fff0f5;color:#3a1226;margin:0}main{max-width:760px;margin:auto;padding:20px}
+h1{color:#d6336c;font-family:Georgia,serif;font-style:italic}label{display:block;font-weight:700;margin:18px 0 4px}small{font-weight:400;color:#8a5a6e}
+input[type=text],input[type=password],textarea{width:100%;padding:10px;border:1px solid #f0b3c8;border-radius:10px;font:inherit;background:#fff;color:inherit}
+textarea{min-height:110px}button{background:#d6336c;color:#fff;border:0;border-radius:99px;padding:10px 22px;font-weight:700;cursor:pointer;margin:6px 6px 0 0}
+button.g{background:#fff;color:#d6336c;border:1px solid #d6336c}.bar{position:sticky;bottom:0;background:#fff0f5;padding:12px 0;border-top:1px solid #f0b3c8;margin-top:24px}
+#msg{font-weight:700;margin-left:6px}.pv{background:#fff;border-radius:10px;padding:10px;margin-top:8px;white-space:pre-line}#login{max-width:340px;margin:12vh auto}
+.ph{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;background:#fff;border-radius:12px;padding:8px;margin-top:8px}.ph img{width:64px;height:80px;object-fit:cover;border-radius:8px}.ph input{flex:1}
+button.s{padding:6px 12px;margin:0}input[type=date]{padding:9px;border:1px solid #f0b3c8;border-radius:10px;font:inherit}.phc{flex:1;min-width:220px}.phb{display:flex;gap:4px}
+.fl2{display:block;font-weight:600;font-size:12px;margin-top:8px}.fl2 input,.fl2 textarea,.fl2 select{width:100%;padding:8px;border:1px solid #f0b3c8;border-radius:10px;font:inherit;background:#fff;color:inherit}.fl2 textarea{min-height:90px}
+.bx{background:#fff;border-radius:12px;padding:8px 12px;margin-top:10px}.bx>summary{cursor:pointer;font-weight:700}.lr{border-top:1px dashed #f0b3c8;margin-top:12px;padding-top:4px}.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+</style></head><body><main>
+<div id="login" hidden><h1>Admin login</h1><input type="password" id="pw" placeholder="Password"><button id="go">Login</button><div id="lerr" style="color:#b0244f;margin-top:8px"></div></div>
+<div id="app" hidden>
+<h1>Edit your birthday website 💌</h1><p>Changes go <b>live instantly</b> after Save. <a href="/" target="_blank">Open site ↗</a></p>
+<label>Envelope heading</label><input type="text" id="intro">
+<label>Main title <small>(🎂 is added automatically)</small></label><input type="text" id="title">
+<label>Small line above title</label><input type="text" id="subtitle">
+<label>Letter <small>(separate paragraphs with a blank line)</small></label><textarea id="letter" style="min-height:260px"></textarea>
+<label>“This is us” buttons <small>(one per line: Button label | Caption)</small></label><textarea id="chips"></textarea>
+<label>My Promises <small>(one per line)</small></label><textarea id="promises"></textarea>
+<label>Hug button messages <small>(one per line, shown in order)</small></label><textarea id="hug"></textarea>
+<label>“Our Cute Moments” generator <small>(one theme per line: emoji emoji :: starts / starts :: endings / endings). Any start + any ending are combined, so the supply never runs out and the emoji always matches the theme.</small></label><textarea id="momentThemes" style="min-height:220px"></textarea>
+<label>“Reasons I love you” generator <small>(same format)</small></label><textarea id="reasonThemes" style="min-height:180px"></textarea>
+<label>Love Gallery title</label><input type="text" id="galleryTitle">
+<label>WhatsApp number <small>(letters from the site open WhatsApp to this number — e.g. 01794608874 or +8801794608874)</small></label><input type="text" id="whatsapp">
+<label>Quick-reply buttons in the message box <small>(one per line — Bangla or English)</small></label><textarea id="quick" style="min-height:90px"></textarea>
+<label>Love Timer: together since <small>(leave empty to hide the timer)</small></label><input type="date" id="togetherSince">
+<label>Timer text</label><input type="text" id="togetherLabel">
+<label>Home page (hub) title</label><input type="text" id="hubTitle">
+<label>Home page sentence</label><input type="text" id="hubSubtitle">
+<label>Letter boxes &amp; home page cards <small>(each box is a card on the home page with its own page. “Letter box” = unlimited letters, optional secret PIN, optional opening date. Make boxes like Birthday Wishes, Miss You, Fantasy, How I Want You… Bangla or English.)</small></label>
+<div id="boxes"></div><button class="g" id="addbox" type="button">+ Add new box</button>
+<label>Love Gallery photos &amp; their letters <small>(each photo can have its own letter — shown when the visitor taps “Open my love letter” under that photo. upload as many photos as you like — they appear on the site right away. Leave a caption empty to get an auto cute/naughty line each time; type one to fix it for that photo. Click Save after editing captions/order.)</small></label>
+<input type="file" id="up" accept="image/*" multiple><div id="phl"></div>
+<label>Photo caption generator <small>(same format: emoji :: starts :: endings)</small></label><textarea id="photoThemes" style="min-height:180px"></textarea>
+<label><input type="checkbox" id="useAI"> Use Claude AI for brand-new lines <small>(needs ANTHROPIC_API_KEY on the server; falls back to the generator above)</small></label>
+<div id="pv"></div>
+<div class="bar"><button id="save">Save &amp; go live</button><button class="g" id="test">Preview generated lines</button><button class="g" id="out">Logout</button><span id="msg"></span></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);let C;
+const j=async(u,m='GET',b)=>{const r=await fetch(u,{method:m,headers:{'content-type':'application/json'},body:b?JSON.stringify(b):undefined});const d=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(d.error||'Error'),{status:r.status});return d};
+const th=a=>a.map(t=>t.emoji.join(' ')+' :: '+t.starts.join(' / ')+' :: '+t.ends.join(' / ')).join('\n');
+const unth=(s,name)=>s.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split('::').map(x=>x.trim());if(p.length!==3||!p[0])throw new Error(name+': each line needs  emoji :: starts :: endings');const f=x=>x.split('/').map(y=>y.trim()).filter(Boolean);return{emoji:p[0].split(/\s+/),starts:f(p[1]),ends:f(p[2])}});
+const lines=s=>s.split('\n').map(x=>x.trim()).filter(Boolean);
+async function init(){try{const m=await j('/api/admin/me');if(!m.authed)return showLogin();C=await j('/api/admin/content');fill();$('#login').hidden=true;$('#app').hidden=false}catch{showLogin()}}
+function showLogin(){$('#app').hidden=true;$('#login').hidden=false}
+function fill(){['intro','title','subtitle'].forEach(k=>$('#'+k).value=C[k]||'');
+$('#letter').value=C.letter.join('\n\n');$('#chips').value=C.chips.map(x=>x.label+' | '+x.caption).join('\n');
+$('#promises').value=C.promises.join('\n');$('#hug').value=C.hug.join('\n');$('#momentThemes').value=th(C.momentThemes);$('#reasonThemes').value=th(C.reasonThemes);$('#useAI').checked=!!C.useAI;$('#photoThemes').value=th(C.photoThemes);drawPh();
+['galleryTitle','whatsapp','togetherSince','togetherLabel'].forEach(k=>$('#'+k).value=C[k]||'');
+$('#quick').value=(C.quick||[]).join('\n');$('#hubTitle').value=C.hubTitle||'';$('#hubSubtitle').value=C.hubSubtitle||'';drawBoxes()}
+const fmtl=a=>a.map(l=>'# '+l.title+'\n'+l.body).join('\n\n');
+const unl=s=>{const out=[];let cur=null;for(const raw of s.split('\n')){const m=raw.match(/^#\s+(.*)$/);if(m){cur={title:m[1].trim(),body:''};out.push(cur)}else{if(!cur){if(!raw.trim())continue;cur={title:'My letter',body:''};out.push(cur)}cur.body+=raw+'\n'}}return out.map(l=>({title:l.title,body:l.body.trim()})).filter(l=>l.body)};
+$('#go').onclick=async()=>{try{await j('/api/login','POST',{password:$('#pw').value});$('#pw').value='';$('#lerr').textContent='';init()}catch(e){$('#lerr').textContent=e.message}};
+$('#pw').onkeydown=e=>{if(e.key==='Enter')$('#go').click()};
+$('#out').onclick=async()=>{await j('/api/logout','POST');showLogin()};
+$('#save').onclick=async()=>{const m=$('#msg');try{
+const d={intro:$('#intro').value,title:$('#title').value,subtitle:$('#subtitle').value,
+letter:$('#letter').value.split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean),
+chips:lines($('#chips').value).map(l=>{const[a,...b]=l.split('|');return{label:a.trim(),caption:b.join('|').trim()}}),
+promises:lines($('#promises').value),hug:lines($('#hug').value),
+momentThemes:unth($('#momentThemes').value,'Moments'),reasonThemes:unth($('#reasonThemes').value,'Reasons'),useAI:$('#useAI').checked,photos:C.photos,photoThemes:unth($('#photoThemes').value,'Photo captions'),
+galleryTitle:$('#galleryTitle').value,whatsapp:$('#whatsapp').value,togetherSince:$('#togetherSince').value,togetherLabel:$('#togetherLabel').value,hubTitle:$('#hubTitle').value,hubSubtitle:$('#hubSubtitle').value,quick:lines($('#quick').value),boxes:C.boxes};
+await j('/api/admin/content','PUT',d);C=d;m.style.color='#1f7a4d';m.textContent='Saved ✓ — live now'}catch(e){m.style.color='#b0244f';m.textContent=e.status===401?'Session expired, login again':e.message}};
+$('#test').onclick=async()=>{await $('#save').onclick();const a=await j('/api/moments?n=4'),b=await j('/api/reasons?n=4');
+$('#pv').innerHTML='<div class="pv"><b>Moments</b>\n'+a.items.map(x=>x.emoji+' '+x.text).join('\n')+'</div><div class="pv"><b>Reasons</b>\n'+b.items.map(x=>x.emoji+' '+x.text).join('\n')+'</div>'};
+const el=(t,p={},...k)=>{const e=document.createElement(t);Object.assign(e,p);k.forEach(x=>e.append(x));return e};
+function fld(label,o,k,tag='input',attrs={}){const i=el(tag,attrs);i.value=o[k]||'';i.oninput=()=>{o[k]=i.value};return el('label',{className:'fl2'},label,i)}
+function sel(label,o,k,opts){const s=el('select');opts.forEach(([v,t])=>s.append(el('option',{value:v,textContent:t})));s.value=o[k];s.onchange=()=>{o[k]=s.value};return el('label',{className:'fl2'},label,s)}
+const rid=p=>p+Math.random().toString(36).slice(2,8);
+const mv=(arr,i,d,redraw)=>{const j=i+d;if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];redraw()};
+const btn=(t,f)=>el('button',{type:'button',className:'g s',textContent:t,onclick:f});
+function drawPh(){const g=$('#phl');g.innerHTML='';C.photos.forEach((p,i)=>{const d=el('div',{className:'ph'});
+ const col=el('div',{className:'phc'});col.append(fld('Caption (empty = auto cute line)',p,'caption'),fld('This photo’s letter — title',p,'title'),fld('This photo’s letter (Bangla or English; empty = no letter button)',p,'body','textarea'));
+ const bt=el('div',{className:'phb'});bt.append(btn('↑',()=>mv(C.photos,i,-1,drawPh)),btn('↓',()=>mv(C.photos,i,1,drawPh)),btn('✕',async()=>{if(!confirm('Delete this photo?'))return;await j('/api/admin/photos/'+p.id,'DELETE');C.photos.splice(i,1);drawPh();drawBoxes()}));
+ d.append(el('img',{src:'/uploads/'+p.file}),col,bt);g.append(d)})}
+const THEMES=[['rose','Rose 🌹'],['lavender','Lavender 💜'],['peach','Peach 🍑'],['midnight','Midnight 🌙']];
+const KINDS=[['letters','Letter box (own page with letters)'],['birthday','Birthday website'],['photos','Photo letters page'],['link','Custom link']];
+const openBx=new Set();
+function photoSel(l){const s=el('select');s.append(el('option',{value:'',textContent:'(no photo)'}));C.photos.forEach((p,i)=>s.append(el('option',{value:p.id,textContent:'Photo '+(i+1)+(p.caption?' – '+p.caption.slice(0,20):'')})));s.value=l.photoId||'';s.onchange=()=>{l.photoId=s.value};return el('label',{className:'fl2'},'Photo with this letter (optional)',s)}
+function drawBoxes(){const g=$('#boxes');g.innerHTML='';C.boxes.forEach((b,i)=>{
+ const d=el('details',{className:'bx'});d.open=openBx.has(b.id);d.ontoggle=()=>{d.open?openBx.add(b.id):openBx.delete(b.id)};
+ d.append(el('summary',{textContent:(b.icon||'💌')+' '+(b.title||'Untitled')+' — '+(b.kind==='letters'?(b.letters||[]).length+' letters':b.kind)+(b.pin?' 🔒PIN':'')}));
+ d.append(fld('Title',b,'title'),fld('Short description',b,'subtitle'),fld('Icon (one emoji)',b,'icon'),sel('Type',b,'kind',KINDS),sel('Color',b,'theme',THEMES),
+  fld('Link (only for “Custom link” type; start with https:// or /)',b,'target'),fld('Secret PIN (optional; letters stay hidden until entered)',b,'pin'),
+  fld('Opens on this date (optional; box stays locked until then)',b,'unlockAt','input',{type:'date'}),fld('Message while locked',b,'lockMessage'));
+ if(b.kind==='letters'){b.letters=b.letters||[];b.letters.forEach((l,k)=>{const r=el('div',{className:'lr'});
+  r.append(fld('Emoji',l,'emoji'),fld('Letter title',l,'title'),photoSel(l),fld('Letter (Bangla or English)',l,'body','textarea'));
+  const rw=el('div',{className:'row'});rw.append(btn('↑',()=>mv(b.letters,k,-1,drawBoxes)),btn('↓',()=>mv(b.letters,k,1,drawBoxes)),btn('✕ delete letter',()=>{if(confirm('Delete this letter?')){b.letters.splice(k,1);drawBoxes()}}));r.append(rw);d.append(r)});
+  d.append(el('div',{className:'row'},btn('+ Add letter',()=>{b.letters.push({id:rid('l'),emoji:'💌',title:'',photoId:'',body:''});openBx.add(b.id);drawBoxes()})))}
+ d.append(el('div',{className:'row'},btn('↑ box',()=>mv(C.boxes,i,-1,drawBoxes)),btn('↓ box',()=>mv(C.boxes,i,1,drawBoxes)),btn('🗑 delete box',()=>{if(confirm('Delete this whole box and its letters?')){C.boxes.splice(i,1);drawBoxes()}})));
+ g.append(d)})}
+$('#addbox').onclick=()=>{const b={id:rid('b'),title:'New box',subtitle:'',icon:'💌',kind:'letters',theme:'rose',pin:'',unlockAt:'',lockMessage:'',target:'',letters:[]};C.boxes.push(b);openBx.add(b.id);drawBoxes()};
+const shrink=f=>new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const s=Math.min(1,1100/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.75))};im.onerror=rej;im.src=u});
+$('#up').onchange=async e=>{const fs=[...e.target.files],m=$('#msg');m.style.color='#3a1226';for(let k=0;k<fs.length;k++){m.textContent='Uploading '+(k+1)+'/'+fs.length+'…';try{const r=await j('/api/admin/photos','POST',{data:await shrink(fs[k])});C.photos.push(r.photo)}catch(er){m.style.color='#b0244f';m.textContent='Upload failed: '+er.message;break}}drawPh();if(fs.length&&m.style.color!=='rgb(176, 36, 79)')m.textContent='Uploaded ✓ (live). Press Save to keep captions/order.';e.target.value=''};
+init();
+</script></main></body></html>

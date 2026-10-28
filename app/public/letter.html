@@ -1,0 +1,20 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700&family=Quicksand:wght@400;600&family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/site.css"><title>Photo Letters 💌</title></head><body>
+<div class="wrap"><a class="back" id="bk" href="/">← Back</a><h1>A Letter For This Memory 💌</h1><div id="lp"></div><div class="end">♥♥♥</div></div>
+<script src="/site.js"></script><script>
+const {$,api}=L;let list=[],i=0,x0=null;
+$('#bk').onclick=e=>{e.preventDefault();L.back('/birthday.html')};
+function render(first){const p=list[i],box=$('#lp');
+ if(first)box.innerHTML='<div class="car" style="position:relative;touch-action:pan-y"><button class="nav l" id="pv" aria-label="Previous">‹</button><div class="polaroid" id="pol"><div class="pslot" id="slot"></div><div class="pcap" id="cap"></div></div><button class="nav r" id="nx" aria-label="Next">›</button></div><div class="dots" id="dots"></div><div class="letterbox"><h2 id="lt"></h2><div class="lb" id="lb" style="padding:0"></div></div>';
+ const f=$('#pol');f.classList.remove('flip');void f.offsetWidth;f.classList.toggle('alt',i%2===1);f.classList.add('flip');
+ $('#slot').innerHTML='';const im=document.createElement('img');im.src=p.src;im.alt='Photo '+(i+1);$('#slot').append(im);
+ $('#cap').textContent=p.caption||'';$('#lt').textContent=p.title||'My letter to you';$('#lb').textContent=p.body;
+ const dots=$('#dots');dots.innerHTML='';list.forEach((_,k)=>{const d=document.createElement('i');if(k===i)d.className='on';d.onclick=()=>go(k);dots.append(d)});
+ history.replaceState(null,'','?p='+encodeURIComponent(p.id))}
+function go(n){i=(n+list.length)%list.length;render(false)}
+(async()=>{let d;try{d=await api('/api/photos?full=1')}catch{$('#lp').innerHTML='<div class="card">Could not load 💔</div>';return}
+ list=d.photos.filter(p=>p.hasLetter);if(!list.length){$('#lp').innerHTML='<div class="card">No photo letters yet 💌</div>';return}
+ const want=new URLSearchParams(location.search).get('p');i=Math.max(0,list.findIndex(p=>p.id===want));render(true);
+ if(list.length<2){$('#pv').style.display=$('#nx').style.display='none';$('#dots').style.display='none'}
+ $('#pv').onclick=()=>go(i-1);$('#nx').onclick=()=>go(i+1);
+ const car=document.querySelector('.car');car.ontouchstart=e=>{x0=e.touches[0].clientX};car.ontouchend=e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>40&&list.length>1)go(i+(dx<0?1:-1));x0=null}})();
+</script></body></html>

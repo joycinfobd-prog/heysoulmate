@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700&family=Quicksand:wght@400;600&family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/site.css"><title>Letter Box 💌</title></head><body>
+<div class="wrap"><a class="back" id="bk" href="/">← Back</a><div id="bm"></div><div class="end">♥♥♥</div></div>
+<script src="/site.js"></script><script>
+const {$,api,burst}=L,id=new URLSearchParams(location.search).get('id')||'',KEY='pin_'+id;
+$('#bk').onclick=e=>{e.preventDefault();L.back('/')};
+const out=$('#bm');
+function head(b){const h=document.createElement('div');h.className='bhead theme-'+(b.theme||'rose');h.innerHTML='<div class="ic"></div><h1></h1><p></p>';h.querySelector('.ic').textContent=b.icon||'💌';h.querySelector('h1').textContent=b.title||'Letter Box';h.querySelector('p').textContent=b.subtitle||'';return h}
+async function load(pin){try{const d=await api('/api/box/'+encodeURIComponent(id)+'/open',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({pin:pin||''})});if(pin)sessionStorage.setItem(KEY,pin);show(d.box)}
+ catch(e){const d=e.data||{};if(e.status===404){out.innerHTML='<div class="card">This box was not found 💔</div>';return}
+  if(e.status===423){out.innerHTML='';out.append(head({icon:'🔒',title:'Not yet…',subtitle:d.error||'This box is still locked'}));if(d.unlockAt){const p=document.createElement('p');p.textContent='Opens on '+d.unlockAt+' 🎁';out.append(p)}return}
+  if(d.needPin){if(pin)sessionStorage.removeItem(KEY);askPin(pin?e.message:'')}else out.innerHTML='<div class="card">Something went wrong. Please try again 💔</div>'}}
+function askPin(msg){out.innerHTML='';out.append(head({icon:'🔐',title:'Secret Box',subtitle:'Enter the PIN to open'}));
+ const w=document.createElement('div');w.innerHTML='<div class="pin"><input id="pi" type="password" inputmode="numeric" autocomplete="off" maxlength="12"><button class="btn" id="pg">Open ♥</button></div><div class="err"></div>';out.append(w);
+ w.querySelector('.err').textContent=msg||'';const go=()=>{const v=$('#pi').value.trim();if(v)load(v)};$('#pg').onclick=go;$('#pi').onkeydown=e=>{if(e.key==='Enter')go()};$('#pi').focus()}
+function show(b){out.innerHTML='';out.append(head(b));const L2=b.letters||[];
+ if(!L2.length){out.insertAdjacentHTML('beforeend','<div class="card">No letters here yet 💌</div>');return}
+ const bt=document.createElement('button');bt.className='btn';bt.textContent='🎲 Surprise me';out.append(bt);const list=document.createElement('div');out.append(list);const ds=[];
+ L2.forEach((l,k)=>{const d=document.createElement('details');d.className='lc';const s=document.createElement('summary');s.textContent=(l.emoji||'💌')+' '+(l.title||'Letter');const c=document.createElement('div');c.className='lb';
+  if(l.photo){const im=document.createElement('img');im.className='lph';im.src=l.photo;im.alt='';c.append(im)}c.append(document.createTextNode(l.body||''));d.append(s,c);if(L2.length===1)d.open=true;list.append(d);ds.push(d)});
+ bt.onclick=()=>{const d=ds[Math.random()*ds.length|0];ds.forEach(x=>x.open=false);d.open=true;burst(bt,6);if(d.scrollIntoView)d.scrollIntoView({behavior:'smooth',block:'center'})}}
+load(sessionStorage.getItem(KEY)||'');
+</script></body></html>

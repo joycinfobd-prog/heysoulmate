@@ -1,0 +1,18 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700&family=Quicksand:wght@400;600&family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/site.css"><title>Our Love Universe 💖</title></head><body>
+<div class="wrap"><div style="font-size:34px;margin-top:10px">🏰</div><h1 id="ht">Our Love Universe 💖</h1><p class="sub" id="hs"></p>
+<div id="note"></div><div class="hub-grid" id="grid"></div><div class="end">♥♥♥</div></div>
+<script src="/site.js"></script><script>
+const {$,api,burst}=L;let tm;
+function note(t){const n=$('#note');n.innerHTML='';const d=document.createElement('div');d.className='note';d.textContent=t;n.appendChild(d);clearTimeout(tm);tm=setTimeout(()=>n.innerHTML='',3500)}
+(async()=>{let C;try{C=await api('/api/content')}catch{$('#grid').textContent='Could not load. Please refresh 💔';return}
+ if(C.hubTitle){$('#ht').textContent=C.hubTitle;document.title=C.hubTitle}$('#hs').textContent=C.hubSubtitle||'';
+ C.boxes.forEach(b=>{const a=document.createElement('a');a.className='hub-box theme-'+b.theme;
+  a.href={birthday:'/birthday.html',photos:'/letter.html',letters:'/box.html?id='+encodeURIComponent(b.id),link:b.target||'#'}[b.kind]||'#';
+  if(b.kind==='link'&&/^https?:/.test(b.target))a.rel='noopener';
+  a.innerHTML='<i class="bow">🎀</i><div><div class="ic"></div><h3></h3><p></p></div><span class="go"></span>';
+  a.querySelector('.ic').textContent=b.icon;a.querySelector('h3').textContent=b.title;a.querySelector('p').textContent=b.subtitle;
+  a.querySelector('.go').textContent=b.locked?'🔒 Opens '+b.unlockAt:b.hasPin?'🔒 PIN · Open ➜':'Open Box ➜';
+  if(b.locked){a.classList.add('locked');a.onclick=e=>{e.preventDefault();a.classList.remove('shake');void a.offsetWidth;a.classList.add('shake');note(b.lockMessage||'🔒 This box opens on '+b.unlockAt+' 🤫')}}
+  else a.onclick=()=>burst(a,6);
+  $('#grid').appendChild(a)})})();
+</script></body></html>
